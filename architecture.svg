@@ -1,0 +1,148 @@
+<svg width="100%" viewBox="0 0 840 620" role="img" xmlns="http://www.w3.org/2000/svg">
+  <title style="font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, sans-serif;font-size:16px">danger-zone — zsh architecture</title>
+  <desc style="font-family:&quot;Anthropic Sans&quot;, -apple-system, &quot;system-ui&quot;, sans-serif;font-size:14px">Four layers: (1) chpwd hook parses per-project .danger-zone.conf (data, not code); (2) the accept-line ZLE widget intercepts Enter and prompts for confirmation when a trigger matches in a production context; (3) preexec/precmd hooks wrap the confirmed command with tmux visual setup/teardown and write the audit log; (4) tmux renders two banner panes, a tinted pane background, and a renamed window for the duration of the session.</desc>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M2 1L8 5L2 9" fill="none" stroke="context-stroke" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    </marker>
+    <style>
+      .ttl   { font-family:"Anthropic Sans", -apple-system, "system-ui", sans-serif; font-size:18px; font-weight:600; fill:rgb(38, 38, 36); }
+      .sub   { font-family:"Anthropic Sans", -apple-system, "system-ui", sans-serif; font-size:12px; fill:rgb(95, 94, 90); }
+      .lay   { font-family:"Anthropic Sans", -apple-system, "system-ui", sans-serif; font-size:11px; font-weight:600; letter-spacing:0.04em; fill:rgb(95, 94, 90); }
+      .head  { font-family:"Anthropic Sans", -apple-system, "system-ui", sans-serif; font-size:13px; font-weight:500; text-anchor:middle; }
+      .det   { font-family:"Anthropic Sans", -apple-system, "system-ui", sans-serif; font-size:11px; font-weight:400; text-anchor:middle; }
+      .edge  { font-family:"Anthropic Sans", -apple-system, "system-ui", sans-serif; font-size:11px; fill:rgb(61, 61, 58); text-anchor:middle; }
+
+      .zsh-fill   { fill:rgb(238, 237, 254); stroke:rgb(83, 74, 183); stroke-width:0.6; }
+      .zsh-head   { fill:rgb(60, 52, 137); }
+      .zsh-det    { fill:rgb(83, 74, 183); }
+
+      .safe-fill  { fill:rgb(225, 245, 238); stroke:rgb(15, 110, 86); stroke-width:0.6; }
+      .safe-head  { fill:rgb(8, 80, 65); }
+      .safe-det   { fill:rgb(15, 110, 86); }
+
+      .tmux-fill  { fill:rgb(252, 235, 235); stroke:rgb(163, 45, 45); stroke-width:0.6; }
+      .tmux-head  { fill:rgb(121, 31, 31); }
+      .tmux-det   { fill:rgb(163, 45, 45); }
+
+      .user-fill  { fill:rgb(241, 239, 232); stroke:rgb(95, 94, 90); stroke-width:0.6; }
+      .user-head  { fill:rgb(68, 68, 65); }
+      .user-det   { fill:rgb(95, 94, 90); }
+
+      .divider    { stroke:rgb(220, 218, 210); stroke-width:1; stroke-dasharray:4 4; }
+      .edge-line  { stroke:rgb(115, 114, 108); stroke-width:1.5; fill:none; }
+    </style>
+  </defs>
+
+  <!-- Title -->
+  <text x="420" y="30" text-anchor="middle" class="ttl">danger-zone — zsh architecture</text>
+  <text x="420" y="50" text-anchor="middle" class="sub">Four layers, executed in order from directory change through command teardown.</text>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- Layer 1: chpwd hook                                                     -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <text x="40" y="88" class="lay">1 · CHPWD HOOK (fires on cd)</text>
+
+  <rect x="40"  y="100" width="150" height="52" rx="8" class="user-fill"/>
+  <text x="115" y="120" class="head user-head">cd into repo</text>
+  <text x="115" y="138" class="det  user-det">directory changes</text>
+
+  <line x1="190" y1="126" x2="224" y2="126" marker-end="url(#arrow)" class="edge-line"/>
+
+  <rect x="224" y="100" width="210" height="52" rx="8" class="zsh-fill"/>
+  <text x="329" y="120" class="head zsh-head">chpwd walks up</text>
+  <text x="329" y="138" class="det  zsh-det">looks for .danger-zone.conf</text>
+
+  <line x1="434" y1="126" x2="468" y2="126" marker-end="url(#arrow)" class="edge-line"/>
+
+  <rect x="468" y="100" width="230" height="52" rx="8" class="zsh-fill"/>
+  <text x="583" y="120" class="head zsh-head">parse (data, not code)</text>
+  <text x="583" y="138" class="det  zsh-det">trigger · prod_env · marker · label</text>
+
+  <line x1="698" y1="126" x2="732" y2="126" marker-end="url(#arrow)" class="edge-line"/>
+
+  <rect x="732" y="100" width="86" height="52" rx="8" class="zsh-fill"/>
+  <text x="775" y="120" class="head zsh-head">append</text>
+  <text x="775" y="138" class="det  zsh-det">to arrays</text>
+
+  <line x1="20" y1="172" x2="820" y2="172" class="divider"/>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- Layer 2: accept-line ZLE widget                                         -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <text x="40" y="196" class="lay">2 · ACCEPT-LINE WIDGET (fires on Enter — gates everything downstream)</text>
+
+  <rect x="40"  y="210" width="150" height="52" rx="8" class="user-fill"/>
+  <text x="115" y="230" class="head user-head">User hits Enter</text>
+  <text x="115" y="248" class="det  user-det">on any command</text>
+
+  <line x1="190" y1="236" x2="224" y2="236" marker-end="url(#arrow)" class="edge-line"/>
+
+  <rect x="224" y="210" width="230" height="52" rx="8" class="zsh-fill"/>
+  <text x="339" y="230" class="head zsh-head">match trigger + prod?</text>
+  <text x="339" y="248" class="det  zsh-det">DANGER_ZONE_TRIGGERS · PROD_ENV_VARS · kubectl</text>
+
+  <!-- branch: no → safe -->
+  <line x1="260" y1="262" x2="180" y2="300" marker-end="url(#arrow)" class="edge-line"/>
+  <text x="205" y="284" class="edge">no</text>
+
+  <rect x="40"  y="300" width="150" height="46" rx="8" class="safe-fill"/>
+  <text x="115" y="316" class="head safe-head">pass through</text>
+  <text x="115" y="332" class="det  safe-det">command runs normally</text>
+
+  <!-- branch: yes → confirmation -->
+  <line x1="420" y1="262" x2="500" y2="300" marker-end="url(#arrow)" class="edge-line"/>
+  <text x="475" y="284" class="edge">yes</text>
+
+  <rect x="500" y="300" width="230" height="52" rx="8" class="zsh-fill"/>
+  <text x="615" y="320" class="head zsh-head">confirmation prompt</text>
+  <text x="615" y="338" class="det  zsh-det">type "yes" (or label in strict mode)</text>
+
+  <!-- branch: abort -->
+  <line x1="560" y1="352" x2="470" y2="396" marker-end="url(#arrow)" class="edge-line"/>
+  <text x="500" y="378" class="edge">abort</text>
+
+  <rect x="304" y="396" width="170" height="46" rx="8" class="safe-fill"/>
+  <text x="389" y="412" class="head safe-head">buffer cleared</text>
+  <text x="389" y="428" class="det  safe-det">nothing runs</text>
+
+  <!-- branch: confirm → down and across to layer 3 preexec -->
+  <path d="M 670 352 L 670 470 L 125 470 L 125 498" marker-end="url(#arrow)" class="edge-line"/>
+  <text x="700" y="370" class="edge">confirm</text>
+
+  <line x1="20" y1="486" x2="820" y2="486" class="divider"/>
+
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <!-- Layers 3 & 4: preexec + tmux visuals + precmd                           -->
+  <!-- ══════════════════════════════════════════════════════════════════════ -->
+  <text x="40" y="510" class="lay">3 · PREEXEC / PRECMD HOOKS   ·   4 · TMUX VISUALS (pane-scoped)</text>
+
+  <rect x="40"  y="524" width="170" height="56" rx="8" class="zsh-fill"/>
+  <text x="125" y="545" class="head zsh-head">preexec</text>
+  <text x="125" y="562" class="det  zsh-det">paint danger visuals</text>
+
+  <line x1="210" y1="552" x2="244" y2="552" marker-end="url(#arrow)" class="edge-line"/>
+
+  <rect x="244" y="524" width="330" height="56" rx="8" class="tmux-fill"/>
+  <text x="409" y="545" class="head tmux-head">tmux: 2 banner panes + tinted bg + rename</text>
+  <text x="409" y="562" class="det  tmux-det">state on @danger_zone* pane options</text>
+
+  <line x1="574" y1="552" x2="608" y2="552" marker-end="url(#arrow)" class="edge-line"/>
+
+  <rect x="608" y="524" width="210" height="56" rx="8" class="zsh-fill"/>
+  <text x="713" y="545" class="head zsh-head">precmd (on command exit)</text>
+  <text x="713" y="562" class="det  zsh-det">teardown + audit log + summary</text>
+
+  <!-- Legend -->
+  <g transform="translate(40,600)">
+    <rect x="0"   y="0" width="10" height="10" rx="2" class="zsh-fill"/>
+    <text x="16"  y="9" class="det user-det" text-anchor="start">zsh layer</text>
+    <rect x="90"  y="0" width="10" height="10" rx="2" class="tmux-fill"/>
+    <text x="106" y="9" class="det user-det" text-anchor="start">tmux layer</text>
+    <rect x="185" y="0" width="10" height="10" rx="2" class="safe-fill"/>
+    <text x="201" y="9" class="det user-det" text-anchor="start">safe path</text>
+    <rect x="265" y="0" width="10" height="10" rx="2" class="user-fill"/>
+    <text x="281" y="9" class="det user-det" text-anchor="start">user action</text>
+  </g>
+</svg>
