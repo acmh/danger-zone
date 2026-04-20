@@ -2,6 +2,8 @@
 
 A zsh guard against mistakes in a production shell. Intercepts dangerous commands, requires an explicit confirmation, and paints the tmux pane blood-red for as long as the session lasts. Language- and tool-agnostic: you register the commands that count as dangerous and the signals that count as production.
 
+![Architecture](architecture.svg)
+
 ## Install
 
 ```zsh
@@ -71,7 +73,6 @@ label    python manage.py shell = PRODUCTION DJANGO SHELL
 | `label <trigger> = <banner text>` | Set the banner label shown when this trigger fires. |
 | `reset` | Clear all four arrays (drop the built-in Rails defaults for this project). |
 
-**Why a custom format?** The file is **data, not code**. Earlier versions sourced a `.danger-zone.zsh`; that needed a direnv-style allowlist because a malicious repo could ship an arbitrary-code payload. A parsed config can't execute anything, so the allowlist goes away and teams can just commit the file.
 
 ## Runtime knobs
 
