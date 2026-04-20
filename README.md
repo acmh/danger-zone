@@ -2,9 +2,10 @@
 
 A zsh guard against mistakes in a production shell. Intercepts dangerous commands, requires an explicit confirmation, and paints the tmux pane blood-red for as long as the session lasts. Language- and tool-agnostic: you register the commands that count as dangerous and the signals that count as production.
 
-![danger-zone in action: a rails console in production wrapped top and bottom by blood-red DANGER banners](dangerzone-example.png)
+<img src="dangerzone-example.png" alt="danger-zone in action: a rails console in production wrapped top and bottom by blood-red DANGER banners" width="600" />
 
-![Architecture](architecture.svg)
+<img src="architecture.svg" alt="Architecture" width="700" />
+
 
 ## Install
 
